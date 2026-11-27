@@ -1,0 +1,7 @@
+#ifndef _SW_TEXTURE_LRU_H
+#define _SW_TEXTURE_LRU_H
+
+void swrEvictTextureFromCache(SWRenderer* swr, int textureIndex);
+bool swrEnsureTextureIsLoaded(SWRenderer* swr, uint32_t pageId);
+
+#endif//_SW_TEXTURE_LRU_H

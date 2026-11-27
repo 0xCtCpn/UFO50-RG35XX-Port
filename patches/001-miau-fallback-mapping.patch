@@ -1,0 +1,95 @@
+diff --git a/src/backends/sdl1.c b/src/backends/sdl1.c
+index a2bf622..56b031a 100644
+--- a/src/backends/sdl1.c
++++ b/src/backends/sdl1.c
+@@ -227,6 +227,74 @@ static void loadGamepadMappings(void) {
+             SDL_JoystickNumAxes(openJoysticks[i]), SDL_JoystickNumHats(openJoysticks[i]), joystickMappings[i].valid);
+     }
+ }
++
++/* MiaUI (RG35XX) fallback gamepad mapping. The shipped gamecontrollerdb.txt
++ * has no Linux entry matching the gpio-keys "RG35XX Gamepad", so without this
++ * the pad reports "connected" but every gp button stays false.
++ *
++ * Verified SDL1.2 joystick order on MiaUI v2.0.0 (17 buttons, 0 axes, 0 hats):
++ *   0:A 1:B 2:X 3:Y 4:L1 5:R1 6:L2 7:R2 8:Select 9:Start 10:L3 11:R3
++ *   12:VOL-DOWN(!) 13:dpup 14:dpdown 15:dpleft 16:dpright
++ * The dpad sits ONE SLOT LOWER than GP standard order, and sdl button 12 is
++ * the system volume key (must never be referenced by any game button).
++ */
++static void createFallbackMappings(void) {
++    for (int i = 0; i < MAX_GAMEPADS; i++) {
++        SDL_Joystick* joy = openJoysticks[i];
++        if (!joy || joystickMappings[i].valid) continue;
++        const char* jname = SDL_JoystickName(i);
++        int nbtn = SDL_JoystickNumButtons(joy);
++        int nax = SDL_JoystickNumAxes(joy);
++        int nhat = SDL_JoystickNumHats(joy);
++        GamepadMapping* m = &joystickMappings[i];
++        memset(m, 0, sizeof(GamepadMapping));
++        for (int k = 0; k < GP_BUTTON_COUNT; k++) {
++            m->button_map[k] = -1;
++            m->hat_map[k] = -1;
++            m->hat_mask[k] = -1;
++            m->axis_button_map[k] = -1;
++            m->axis_button_sign[k] = 1.0f;
++        }
++        for (int k = 0; k < GP_AXIS_COUNT; k++) m->axis_map[k] = -1;
++
++        /* 0..9 = A,B,X,Y,L1,R1,L2,R2,Select,Start (identity). */
++        int idn = nbtn < 10 ? nbtn : 10;
++        for (int k = 0; k < idn; k++) m->button_map[k] = k;
++        m->max_button = idn > 0 ? idn - 1 : -1;
++
++        /* This pad: gp 12..15 (dpup..dpright) <- sdl 13..16. */
++        if (nbtn > 15) {
++            m->button_map[12] = 13; /* gp dpup    <- sdl 13 (phys up)    */
++            m->button_map[13] = 14; /* gp dpdown  <- sdl 14 (phys down)  */
++            m->button_map[14] = 15; /* gp dpleft  <- sdl 15 (phys left)  */
++            m->button_map[15] = 16; /* gp dpright <- sdl 16 (phys right) */
++            m->max_button = 16;
++        }
++        /* Garlic-era pads (12 buttons / 6 axes / 1 hat) keep the old path. */
++        if (nhat > 0) {
++            m->max_hat = nhat - 1;
++            m->hat_map[12] = 0; m->hat_mask[12] = SDL_HAT_UP;
++            m->hat_map[13] = 0; m->hat_mask[13] = SDL_HAT_DOWN;
++            m->hat_map[14] = 0; m->hat_mask[14] = SDL_HAT_LEFT;
++            m->hat_map[15] = 0; m->hat_mask[15] = SDL_HAT_RIGHT;
++        }
++        if (nax > 1) {
++            m->max_axis = nax - 1;
++            m->axis_map[0] = 0;
++            m->axis_map[1] = 1;
++            m->axis_button_map[14] = 0; m->axis_button_sign[14] = -1.0f;
++            m->axis_button_map[15] = 0; m->axis_button_sign[15] = 1.0f;
++            m->axis_button_map[12] = 1; m->axis_button_sign[12] = -1.0f;
++            m->axis_button_map[13] = 1; m->axis_button_sign[13] = 1.0f;
++        }
++        if (nax > 2) { m->axis_button_map[6] = 2; m->axis_button_sign[6] = 1.0f; }
++        if (nax > 3) { m->axis_button_map[7] = 3; m->axis_button_sign[7] = 1.0f; }
++        m->valid = true;
++        logInfo("Gamepad: MiaUI fallback mapping for '%s' (slot %d) buttons=%d axes=%d hats=%d\n",
++            jname ? jname : "(null)", i, nbtn, nax, nhat);
++    }
++}
++
+ void platformSetWindowTitle(const char* title) {
+     char windowTitle[256];
+     snprintf(windowTitle, sizeof(windowTitle), "Butterscotch - %s", title);
+@@ -307,6 +375,7 @@ bool platformInit(int32_t reqW, int32_t reqH, const char *title, bool headless)
+         }
+     }
+     loadGamepadMappings();
++    createFallbackMappings();
+ 
+     fbWidth = reqW;
+     fbHeight = reqH;
+@@ -566,6 +635,7 @@ static void platformResetJoysticks(void) {
+ 
+     if (needsRemap) {
+         loadGamepadMappings();
++        createFallbackMappings();
+     }
+ }
+ 

@@ -1,0 +1,42 @@
+diff --git a/src/loop.c b/src/loop.c
+index b409d2b..3563721 100644
+--- a/src/loop.c
++++ b/src/loop.c
+@@ -1005,7 +1005,9 @@ int loop(CommandLineArgs args, const char *argv0) {
+ #ifdef __linux__
+         long perfMajorFaults = 0;
+ #endif
++        static int traceFrame = 0;
+         while (true) {
++            if (traceFrame < 8) logError("TRACE: frame=%d enter\n", traceFrame);
+             if (runner->shouldExit || shouldWindowClose) {
+                 actuallyShuttingDown = true;
+                 break;
+@@ -1171,7 +1173,9 @@ int loop(CommandLineArgs args, const char *argv0) {
+                 }
+ 
+                 // Run one game step (Begin Step, Keyboard, Alarms, Step, End Step, room transitions)
++                if (traceFrame < 8) logError("TRACE: frame=%d pre-step\n", traceFrame);
+                 Runner_step(runner);
++                if (traceFrame < 8) logError("TRACE: frame=%d post-step\n", traceFrame);
+ 
+                 if (freeCamActive) {
+                     memcpy(runner->keyboard->keyDown, currentKeyDown, sizeof(runner->keyboard->keyDown));
+@@ -1341,7 +1345,9 @@ int loop(CommandLineArgs args, const char *argv0) {
+                     // Only present when there isn't a Draw-event room change.
+                     if (runner->pendingRoom == -1) {
+                         uint64_t presentStarted = nowNanos();
++                        if (traceFrame < 8) logError("TRACE: frame=%d pre-swap\n", traceFrame);
+                         platformSwapBuffers();
++                        if (traceFrame < 8) logError("TRACE: frame=%d post-swap\n", traceFrame);
+                         if (!startupPresented && !args.headless) {
+                             logInfo("Startup: first frame presented\n");
+                             startupPresented = true;
+@@ -1402,6 +1408,7 @@ int loop(CommandLineArgs args, const char *argv0) {
+                 }
+                 platformSleepUntil(frameDeadline);
+             }
++            if (traceFrame < 8) { logError("TRACE: frame=%d end\n", traceFrame); traceFrame++; }
+             lastFrameTime = nowNanos();
+             if (perfEnabled && waitStarted) {
+                 uint64_t waited = lastFrameTime - waitStarted;

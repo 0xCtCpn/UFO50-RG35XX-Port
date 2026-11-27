@@ -1,0 +1,5 @@
+# Patch files and shell scripts are whitespace/line-ending sensitive.
+* text=auto eol=lf
+*.patch text eol=lf
+*.sh text eol=lf
+*.bat text eol=crlf

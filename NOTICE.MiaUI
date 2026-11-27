@@ -1,0 +1,25 @@
+UFO 50 for Anbernic RG35XX (original, non-H700) running MiaUI v2.0.0 is a
+port of https://github.com/Producdevity/ufo50-miyoo-mini-port (v0.1.9).
+
+This port cross-compiles that project's vendored Butterscotch runtime for the
+RG35XX's armhf/glibc userland (MiaUI SYSTEM is glibc 2.37, Buildroot 2023.05.1,
+INTERP /lib/ld-linux-armhf.so.3) and adds the MiaUI-specific gamepad mapping,
+joystick-name performance fix, clean-exit hotkey, launcher and packaging.
+
+Upstream runtime: the Butterscotch GameMaker runner, AGPL-3.0 (see LICENSE).
+Onion branch base:
+  https://github.com/cobaltgit/Butterscotch/tree/onion-v2
+  commit 92ed6b8c3766361a201a69d202bcde5873cdad7e
+Maintained upstream at:
+  https://github.com/ButterscotchRunner/Butterscotch
+Original Miyoo Mini port and UFO50 compatibility work:
+  https://github.com/Producdevity/ufo50-miyoo-mini-port
+
+Third-party dependency notices are in licenses/THIRD_PARTY.txt. SDL 1.2.15 and
+alsa-lib are cross-compiled at build time; the built libasound is NOT shipped
+(bundling it shadows MiaUI's system libasound and breaks audio).
+
+MiaUI is by DSkywalk: https://github.com/miaui-cfw/MiaUI-GPU-RG35XX
+
+UFO 50 is made by Mossmouth and its creators. No game files (data.win, audio
+groups, textures, fonts) are included - you must supply your own Windows copy.

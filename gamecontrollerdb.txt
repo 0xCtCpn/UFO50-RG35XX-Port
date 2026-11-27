@@ -1,0 +1,10 @@
+# Minimal SDL1 gamepad database for the MiaUI RG35XX (original, non-H700).
+#
+# The upstream UFO50 port ships the full ~593 KB SDL database. This runtime's
+# loadGamepadMappings() calls SDL_JoystickName() once per line per pad, and on
+# MiaUI that function opens the device and issues EVIOCGNAME/JSIOCGNAME
+# ioctls (~50 ms each) -> a multi-minute startup stall. One line is enough:
+# the verified gpio-keys layout is mapped here, and patches/001 is a fallback
+# if the reported name ever differs. The first field is only a GUID placeholder
+# (SDL 1.2 matches the name in the second field).
+03000000000000000000000000000000,RG35XX Gamepad,a:b0,b:b1,x:b2,y:b3,leftshoulder:b4,rightshoulder:b5,lefttrigger:b6,righttrigger:b7,back:b8,start:b9,dpup:b13,dpdown:b14,dpleft:b15,dpright:b16,platform:Linux
